@@ -37,6 +37,7 @@ If you use MongoDB Atlas, you must be able to make outgoing requests from your c
 which will be running on port 27017.  Please confirm that port 27017 is not blocked by checking with 
 [PortQuiz](http://portquiz.net:27017).  If successful, you will see a page load that indicates you can make outgoing
 requests on port 27017.  The page looks similar to the one below:
+
 ![](images/Outgoing_Port_Tester.jpg)
 
 
@@ -44,15 +45,18 @@ requests on port 27017.  The page looks similar to the one below:
 #### Lab 1 - Create the Cluster (Skip to Lab 2 if you have MongoDB installed locally)
 #### Create a Free Tier Cluster
 #### Click Build a Cluster
+
 ![](images/Clusters___Atlas__MongoDB_Atlas.jpg)
 
 Be sure to select the Free Tier Option for your cluster.
 Take a moment to browse the options (Provider & Region, Cluster Tier, Version, Backup, ...).  For this workshop,
 select AWS as the Cloud Provider:
+
 ![](images/Create_Cluster___Atlas__MongoDB_Atlas.jpg)
 
 Keep all of the defaults.  Be sure to name your Cluster Name to FHIR-Workshop (or anything you prefer) and then
 click the green button to Create Cluster:
+
 ![](images/Name_Create_Cluster___Atlas__MongoDB_Atlas.jpg)
 
 The cluster should complete provisioning within 5-7 minutes.
@@ -64,9 +68,11 @@ install Compass for your platform.
 #### After your MongoDB Atlas Cluster has been provisioned, setup Connection Security:
 Return to the Atlas UI.  Your cluster should be provisioned.  Click the CONNECT button which will prompt you to setup
 security:
+
 ![](images/Connect_Clusters___Atlas__MongoDB_Atlas.jpg)
 
 After clicking the connect button, you should see the following:
+
 ![](images/ConnectionDialog__Clusters___Atlas__MongoDB_Atlas.jpg)
 
 Add your current IP address and Create a MongoDB User.  This example assumes a Username of 'fhir' and password 'workshop'.
@@ -74,10 +80,12 @@ Add your current IP address and Create a MongoDB User.  This example assumes a U
 Click Choose a connection method and select Connect with MongoDB Compass.
 
 Then select 'I am using Compass 1.12 or later' and COPY the connection string presented:
+
 ![](images/Security__Clusters___Atlas__MongoDB_Atlas.jpg)
 
 #### Connect Compass
 Start Compass and it should detect the connection string in your copy buffer:
+
 ![](images/connectstringdetect_MongoDB_Compass_-_Connect.jpg)
 
 Select Yes.
@@ -88,6 +96,7 @@ allow us to quickly connect to the cluster in the future.
 Click CONNECT.
 
 If successful, you will see some internal databases used by MongoDB:
+
 ![](images/first_MongoDB_Compass_-_fhir-workshop-vautv_mongodb_net_27017.jpg)
 
 #### Lab 2 - Load Data
