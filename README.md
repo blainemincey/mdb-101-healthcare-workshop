@@ -49,7 +49,7 @@ installed.  The workshop does *not* go into detail on the installation/use of th
 [mongorestore](https://docs.mongodb.com/manual/reference/program/mongorestore)  
 [mongodump](https://docs.mongodb.com/manual/reference/program/mongodump)  
 
-* Data Import and Export Tools
+* Data Import and Export Tools  
 [mongoimport](https://docs.mongodb.com/manual/reference/program/mongoimport)  
 [mongoexport](https://docs.mongodb.com/manual/reference/program/mongoexport)  
 
