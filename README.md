@@ -2,7 +2,8 @@
 This repository contains a guide on getting started with MongoDB.
 Specifically, this is a step-by-step tutorial/workshop incorporating MongoDB Compass, MongoDB Atlas, and MongoDB Stitch.
 The data utilized in this workshop is based on the health care domain.  The data was acquired by generating sample data 
-in FHIR format (https://www.hl7.org/fhir/formats.html) from https://github.com/synthetichealth/synthea.
+in [FHIR](https://www.hl7.org/fhir/formats.html) format from the [Synthea](https://github.com/synthetichealth/synthea)
+project.
 
 # Introduction to MongoDB
 ## Hands-on Workshop
@@ -15,8 +16,9 @@ guidance on how to query data (CRUD), introduce the user to the aggregation fram
 indexes).  Next, the user can see how queries can be written in Node and Python.  Finally, the user will be introduced 
 to MongoDB Atlas as well as the serverless platform, MongoDB Stitch.
 
-### Prerequisites
+### Required Prerequisites
 To successfully complete this workshop, the following software should be installed:
+
 * [MongoDB Compass](https://www.mongodb.com/download-center/compass) - This is a GUI to MongoDB that will be used to 
 write queries.
 
@@ -26,11 +28,30 @@ Atlas](https://www.mongodb.com/cloud/atlas), the fully managed service from Mong
 at [https://cloud.mongodb.com](https://cloud.mongodb.com) or login to an existing account you may have previously
 created. More details are below.
 
-* To run the Node sample, be sure to have Node properly installed
+### Optional Prerequisites
+During the course of the workshop, code samples will be used with both Node.js and Python.  If you choose to edit/run
+the provided source files, you will need to be sure to have the following installed:
 
-* To run the Python sample, be sure to have Python properly installed
+* Node.js - If you would like to edit/run the Node.js source files
 
-* The ability to interface with a REST endpoint (curl, [Postman](https://www.getpostman.com/), browser)
+* Python - If you would like to edit/run the Python source files
+
+* For the MongoDB Stitch section, the workshop will interface with a REST endpoint.  This will be a GET method and
+can be easily done with your browser.  However, if you want to use something like cURL or 
+[Postman](https://www.getpostman.com/), please be sure to have the tools installed.
+
+### Advanced/Optional Prerequisites
+In Lab 2, the workshop will guide the user to load data using MongoDB Compass.  If you are an advanced MongoDB
+user and would prefer to use the terminal/command-line, be sure to have the MongoDB command-line tools
+installed.  The workshop does *not* go into detail on the installation/use of these tools.
+
+* Binary Import and Export Tools  
+[mongorestore](https://docs.mongodb.com/manual/reference/program/mongorestore)  
+[mongodump](https://docs.mongodb.com/manual/reference/program/mongodump)  
+
+* Data Import and Export Tools
+[mongoimport](https://docs.mongodb.com/manual/reference/program/mongoimport)  
+[mongoexport](https://docs.mongodb.com/manual/reference/program/mongoexport)  
 
 ### Note:
 If you use MongoDB Atlas, you must be able to make outgoing requests from your computer to MongoDB Atlas services
@@ -102,34 +123,7 @@ If successful, you will see some internal databases used by MongoDB:
 #### Lab 2 - Load Data
 We are going to load data that has been parsed from files in the FHIR format.
 
-
-1. CRUD ops
-    1. insert document
-    2. find - specify inner array
-    3. specify conditions, AND/OR conditions
-    4. Query inner documents
-    5. match array
-    6. query docs for compound filter conditions
-    7. elematch 
-    8. query based on array position
-    9. query based on array length
-    10. project fields to return/suppress _id
-    11. check for null field
-    12. { item : { $type: 10 } }
-    13. existence check
-    14. update
-    15. delete docs
-    16. text search / exact phrase/term exclusion
-    17. geospatial with compass
-    18. aggregation framework (with code)
-2. Change Streams?
-3. Write queries in application code
-4. Move into MDB Atlas
-    1. Create cluster/import data/query from UI
-    2. Create Stitch application
-    3. Webhook/trigger/high-level html/javascript web page to host
-    4. Visualize data/charts
-
+# Work In Progress...
 
 
 
