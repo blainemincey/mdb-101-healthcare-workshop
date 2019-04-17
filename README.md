@@ -121,7 +121,150 @@ If successful, you will see some internal databases used by MongoDB:
 ![](images/first_MongoDB_Compass_-_fhir-workshop-vautv_mongodb_net_27017.jpg)
 
 #### Lab 2 - Load Data
-We are going to load data that has been parsed from files in the FHIR format.
+We are now going to load data into MongoDB.  The data that will be used for this workshop
+was parsed from file in FHIR format.  The data is in JSON format.
+
+Download the dataset from Github. If you have the wget utility, you can get the dataset as follows:
+
+wget https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/primer-dataset.json
+
+Otherwise, just open the link in your browser and once the load completes, save the file (File > Save Page As in Chrome).
+
+Or, it is also included as part of this GitHub repo in the data directory as fhirDb-patients.json.
+
+The dataset is 41 MB in size and contains around 600 patients (alive and deceased).
+
+#### Create a Database and Collection  
+Click the CREATE DATABASE button and create a 'fhirDb' database with a 'patients' collection:
+
+![](images/createDatabase.jpg)  
+
+Navigate to the patients collection and select Import Data from the menu.  
+Then BROWSE to the fhirDb-patients.json file you downloaded:  
+
+![](images/importFhir.jpg)  
+
+#### Lab 3 - Browse the Documents
+Notice how the patients documents have a variety of structures beyond a relational/tabular database
+which is limited to rows and columns.  Many of the patient documents contain arrays of 
+sub-documents.  Working with data in this way is much easier than having to flatten out multiple
+tables into a single object.
+
+#### Lab 4 - Analyze the Schema
+Analyze the schema?  Wait, I thought MongoDB was a NoSQL database and was considered to be schema-less?
+While that’s technically true, no dataset would be of any use without a schema. 
+Although MongoDB does not enforce a schema, your collections of documents will still always have one. 
+The key difference with MongoDB is that the schema can be flexible/polymorphic.
+
+Within MongoDB Compass, select the Schema tab and select Analyze Schema. 
+Compass will sample the documents in the collection to derive a schema. 
+In addition to providing field names and types, Compass will also provide a summary 
+of the data values. 
+For example, for language, we can see that in our population, we have 79% that speak
+English as their primary language:  
+
+![](images/analyzeSchema.jpg)  
+
+For fun, take a look at the address field which contains a GeoJSON point, i.e., a longitude
+and latitude coordinate.  You can drill down on the map as it builds the query for you.  
+
+![](images/geomap.jpg)
+
+#### Lab 5 - Query Data with MongoDB Compass (CRUD Operations)  
+Copy the code block and paste in the filter dialog in MongoDB Compass.
+
+##### Find Operations  
+* Simple filter (Single males)  
+``
+{maritalStatus:'S', gender: 'Male'}
+``  
+
+* Simple filter with query operators (Deceased with a date deceased of 2019)  
+``
+{isDeceased:true, dateDeceased : {$gte : ISODate('2019-01-01')}}  
+``  
+
+* Query sub-document/array  (Patients with 'Prediabetes' as a condition)  
+``
+{"conditions.conditionText":"Prediabetes"}
+``  
+
+* Query with AND as well as OR conditions (Deceased patients with either Sinusitis or has taken a medication starting with "Ace")  
+``
+{ isDeceased: true, $or: [ { "conditions.conditionText": "Sinusitis (disorder)" }, { "medicationRequests.display": /^Ace/ } ] }
+``
+
+* Query sub-document in array and project matched array element  
+(Display Blood Pressure array element if the Systolic is greater than or = 140)  
+Filter:  
+``
+{"observations.bloodPressure.display":"Systolic Blood Pressure", "observations.bloodPressure.value":{$gte:140}}
+``  
+Click Options and then in the Projection block:  
+``
+{patientId:1, "observations.$":1}
+``
+
+* Query using the $in (Display patients living in Memphis or Chattanooga)  
+``
+{city : {$in:["Memphis", "Chattanooga"]}}
+``  
+
+##### Update, Delete, Clone Operations  
+Find a document and choose to update a field or fields.  In fact, add a field that
+does not exist.  Next, clone a document.  Finally, delete the cloned document.
+The MongoDB Compass interface provides all of the CRUD controls you need:  
+
+![](images/copyclonedelete.jpg)  
+
+#### Lab 6 - Create indexes to improve efficiency of queries  
+Indexes support the efficient execution of queries in MongoDB. Without indexes, 
+MongoDB must perform a *collection scan*, i.e. scan every document in a collection, 
+to select those documents that match the query statement. 
+If an appropriate index exists for a query, MongoDB can use the index to 
+limit the number of documents it must inspect.  
+
+In this lab, we will perform a search on a field, use the explain plan to determine if
+it could be improved with an index, and create the index...all from within MongoDB Compass.  
+
+Find a patientId to filter on.  For this example, we will use 'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3'.
+Just make sure the patientId you use, exists within your dataset!
+
+In the query box in Compass, enter the following:  
+``
+{patientId:'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3'}
+``  
+
+Then, click the Explain Plan tab as below:  
+
+![](images/explainplanstart.jpg)  
+
+Click the Execute Explain button in the middle of the GUI and review the output.  
+
+![](images/explainresults.jpg)  
+
+Considering this is a relatively small data size, an index may not immediately improve performance.
+In our results, it indicates that a collection scan (bad!!) took place with our filter.  It also indicates
+that the query took 0 milliseconds.  Again, if our data size was larger, this time would have been larger
+as well.  We will now create an index on patientId and then run another explain plan.  
+
+Click on the Indexes tab.  We will create an index on patientId.  Find the field in the
+dropdown and select 'asc' as the index type.  Then, click the create button as below:  
+
+![](images/createIdx.jpg)  
+
+After creating the index, go back to your Explain Plan tab and Execute Explain once more.
+This time, you should see that your index was hit and instead of a collection scan (bad!!),
+an index scan occurred.  Your results should be similar to that below:  
+
+![](images/afterIdxcreate.jpg)  
+
+
+
+#### Lab 7 - Aggregation Framework  
+
+
+##### 
 
 # Work In Progress...
 
