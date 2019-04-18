@@ -399,6 +399,7 @@ both the Node.js and Python drivers.  These are meant to strictly be high-level
 examples of how to interface with MongoDB using two popular scripting/programming
 languages.  
 
+##### Node.js Example
 First, let's take a look at an example in Node.js.  In the src/node directory of this
 GitHub repo there is a Node.js src file that can be used to connect and query
 our sample data.  The file is myNodeApp.js.  If you have cloned the Git repo, you
@@ -517,7 +518,7 @@ MongoClient.connect(dbUrl, {useNewUrlParser: true}, function (err, client) {
 });
 ```  
 
-
+#### Python Example
 
 
 
@@ -526,12 +527,13 @@ MongoClient.connect(dbUrl, {useNewUrlParser: true}, function (err, client) {
 ##### 
 
 # Work In Progress...
-Code Examples in Node.js and Python
-Create Stitch application
-Expose REST endpoint
-Function/Trigger
-Simple webpage w/ query anywhere/Stitch hosting
-Charts/Embed charts
+Lab 9 - Create Stitch application  
+Lab 10 - Expose REST endpoint/Function  
+Lab 11 - Trigger  
+Lab 12 - Simple webpage w/ query anywhere/Stitch hosting  
+Lab 13 - Charts/Embed charts  
+
+
 
 
 
