@@ -176,40 +176,40 @@ Copy the code block and paste in the filter dialog in MongoDB Compass.
 
 ##### Find Operations  
 * Simple filter (Single males)  
-``
+```
 {maritalStatus:'S', gender: 'Male'}
-``  
+```  
 
 * Simple filter with query operators (Deceased with a date deceased of 2019)  
-``
+```
 {isDeceased:true, dateDeceased : {$gte : ISODate('2019-01-01')}}  
-``  
+```  
 
 * Query sub-document/array  (Patients with 'Prediabetes' as a condition)  
-``
+```
 {"conditions.conditionText":"Prediabetes"}
-``  
+```  
 
 * Query with AND as well as OR conditions (Deceased patients with either Sinusitis or has taken a medication starting with "Ace")  
-``
+```
 { isDeceased: true, $or: [ { "conditions.conditionText": "Sinusitis (disorder)" }, { "medicationRequests.display": /^Ace/ } ] }
-``
+```
 
 * Query sub-document in array and project matched array element  
 (Display Blood Pressure array element if the Systolic is greater than or = 140)  
 Filter:  
-``
+```
 {"observations.bloodPressure.display":"Systolic Blood Pressure", "observations.bloodPressure.value":{$gte:140}}
-``  
+```  
 Click Options and then in the Projection block:  
-``
+```
 {patientId:1, "observations.$":1}
-``
+```
 
 * Query using the $in (Display patients living in Memphis or Chattanooga)  
-``
+```
 {city : {$in:["Memphis", "Chattanooga"]}}
-``  
+```  
 
 ##### Update, Delete, Clone Operations  
 Find a document and choose to update a field or fields.  In fact, add a field that
@@ -232,9 +232,9 @@ Find a patientId to filter on.  For this example, we will use 'b476d9e4-b3cf-417
 Just make sure the patientId you use, exists within your dataset!
 
 In the query box in Compass, enter the following:  
-``
+```
 {patientId:'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3'}
-``  
+```  
 
 Then, click the Explain Plan tab as below:  
 
@@ -321,15 +321,14 @@ lung cancer in years 2014, 2004, and 1993.
 The completed aggregation pipeline (as text) is below:  
 ```
 [
-{$match: 
-{
-  isDeceased:true,
-  "conditions.conditionText":"Suspected lung cancer (situation)"}}, 
-  {$group: { _id: "$city", 
-            yearOfDeath : {$push: {$year:"$dateDeceased"}},
-            count: {$sum:1} }}, 
-  {$sort: { "count": -1}
- }
+  {
+    $match: { isDeceased:true,
+              "conditions.conditionText":"Suspected lung cancer (situation)"}}, 
+    {$group: {  _id: "$city", 
+                yearOfDeath : {$push: {$year:"$dateDeceased"}},
+                count: {$sum:1} }}, 
+    {$sort: { "count": -1}
+  }
 ]
 ```
 
@@ -400,7 +399,127 @@ both the Node.js and Python drivers.  These are meant to strictly be high-level
 examples of how to interface with MongoDB using two popular scripting/programming
 languages.  
 
-First, let's take a look at an example in Node.js.  In th
+First, let's take a look at an example in Node.js.  In the src/node directory of this
+GitHub repo there is a Node.js src file that can be used to connect and query
+our sample data.  The file is myNodeApp.js.  If you have cloned the Git repo, you
+can go into the src/node directory and:  
+
+```
+npm install
+```  
+
+This will install the required files, i.e., the MongoDB driver.  If you are using MongoDB Atlas,
+you will need to copy the connection URL from the Atlas Interface.
+First, click the 'Connect' button within your cluster.  Then, click the "Connect to Application"
+button on the window that pops up.  Then, select your driver (Node.js) and copy the
+connection string as indicated below:  
+
+![](images/nodeconnectapp.jpg)  
+
+Open the myNodeApp.js src file and paste the url into the variable named dbUrl. Be sure
+to edit your username/password as well. It should be similar to below:  
+```
+// Connection URL
+const dbUrl = 'mongodb+srv://fhir:workshop@fhir-workshop-vautv.mongodb.net/test?retryWrites=true';
+```  
+
+Inspect the src file.  Be sure the patientId that is being filtered actually exists
+within your dataset or you will not query for an existing document!  If you need
+to edit the patientId, do so and then 'node myNodeApp.js'.  You should see output
+similar to that below:  
+
+```
+$ node myNodeApp.js 
+Connected successfully to MongoDB!
+{ patientId: 'a7b1cd7b-8fa2-42ff-a491-9597d02368c7',
+  firstName: 'Elanor679',
+  lastName: 'Price929',
+  birthDate: 1951-04-21T05:00:00.000Z }
+
+```  
+
+For fun, let's run one of the aggregation pipelines we created in Lab 7.  Find one
+within MongoDB Compass and open it.  Click the '...' and select to Export to Language.
+When the pop-up window opens, be sure to select 'Node' and then copy the block to the
+right as indicated below:  
+
+![](images/exportToLanguage.jpg)  
+
+Find the function in the Node src file called myPipeline and paste your code
+over the existing code.  In this example, we are running the aggregation we created
+to find the most prevalent condition in Chattanooga.  
+
+Your final function should look similar to that below:  
+
+
+```
+// run an aggregation
+function myPipeline(db, callback) {
+    const collection = db.collection('patients');
+
+    collection.aggregate(
+        [
+            {
+                '$match': {
+                    'city': 'Chattanooga'
+                }
+            }, {
+                '$unwind': {
+                    'path': '$conditions'
+                }
+            }, {
+                '$group': {
+                    '_id': '$conditions.conditionText',
+                    'count': {
+                        '$sum': 1
+                    }
+                }
+            }, {
+                '$sort': {
+                    'count': -1
+                }
+            }
+        ],
+        function (err, cursor) {
+            assert.equal(err, null);
+
+            cursor.toArray(function (err, documents) {
+                console.log(documents)
+                callback(documents);
+            });
+        });
+}
+```  
+
+Once your function is correct, be sure to go to the bottom of the src file and
+comment out the find function and uncomment the myPipeline function.  It should
+look similar to what is below:  
+
+```
+// Connect to the database
+MongoClient.connect(dbUrl, {useNewUrlParser: true}, function (err, client) {
+    assert.equal(null, err);
+    console.log("Connected successfully to MongoDB!");
+
+    const db = client.db(databaseName);
+
+    /**
+    findDocuments(db, function () {
+        client.close();
+    })
+     */
+
+
+    myPipeline(db, function () {
+        client.close();
+    })
+
+});
+```  
+
+
+
+
 
 
 
