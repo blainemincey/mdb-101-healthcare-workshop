@@ -3,7 +3,8 @@ This repository contains a guide on getting started with MongoDB.
 Specifically, this is a step-by-step tutorial/workshop incorporating MongoDB Compass, MongoDB Atlas, and MongoDB Stitch.
 The data utilized in this workshop is based on the health care domain.  The data was acquired by generating sample data 
 in [FHIR](https://www.hl7.org/fhir/formats.html) format from the [Synthea](https://github.com/synthetichealth/synthea)
-project.
+project.  In order to parse the files, this [FHIR Parser](https://github.com/blainemincey/fhir) was used.  The application
+uses Spring Boot, Spring Data (MongoDB), Apache Camel, and the HAPI parser for HL7-FHIR.
 
 # Introduction to MongoDB
 ## Hands-on Workshop
@@ -126,13 +127,13 @@ was parsed from file in FHIR format.  The data is in JSON format.
 
 Download the dataset from Github. If you have the wget utility, you can get the dataset as follows:
 
-wget https://raw.githubusercontent.com/mongodb/docs-assets/primer-dataset/primer-dataset.json
+wget https://raw.githubusercontent.com/blainemincey/mdb-101-healthcare-workshop/master/data/fhirDb-patients.json
 
 Otherwise, just open the link in your browser and once the load completes, save the file (File > Save Page As in Chrome).
 
 Or, it is also included as part of this GitHub repo in the data directory as fhirDb-patients.json.
 
-The dataset is 41 MB in size and contains around 600 patients (alive and deceased).
+The dataset is around 50 MB in size and contains around 600 patients (alive and deceased).
 
 #### Create a Database and Collection  
 Click the CREATE DATABASE button and create a 'fhirDb' database with a 'patients' collection:
@@ -260,13 +261,158 @@ an index scan occurred.  Your results should be similar to that below:
 ![](images/afterIdxcreate.jpg)  
 
 
-
 #### Lab 7 - Aggregation Framework  
+MongoDB’s [aggregation framework](https://docs.mongodb.com/manual/core/aggregation-pipeline/) is modeled on the concept of data processing pipelines.
+Documents enter a multi-stage pipeline that transforms the documents into an aggregated 
+result.  
+
+The most basic pipeline stages provide filters that operate like queries and document
+transformations that modify the form of the output document.  
+
+Other pipeline operations provide tools for grouping and sorting documents by specific
+field or fields as well as tools for aggregating the contents of arrays, 
+including arrays of documents. In addition, pipeline stages can use operators 
+for tasks such as calculating the average or concatenating a string.  
+
+The pipeline provides efficient data aggregation using native operations within 
+MongoDB, and is the preferred method for data aggregation in MongoDB.
+
+For this next series of exercises, we will use the aggregation pipeline builder in
+MongoDB Compass to create our aggregation pipelines.
+
+First, click on the Aggregations tab in MongoDB Compass.  Then, click the '...' next to the
+'Save Pipeline' dialog and then, 'New Pipeline' as in the image below:  
+
+![](images/aggregation.jpg)
+
+For our first aggregation, we will determine the number of deaths in each city
+from Lung Cancer.  This means, we will first need to use the $match operator to filter
+our data for deceased patients with a condition of "Suspected lung cancer (situation)".
+Also, enter a name for your aggregation to save.  For this example, we can use "LungCancerDeathsByCity".
+
+Your first stage should resemble the image below:  
+
+![](images/agg-step1.jpg)  
+
+The next step is a bit tricky because we will incorporate a number of operators. Now that we
+have filtered our data for deceased individuals with lung cancer, let's group the result
+by city and then count the number of deaths per year.  You will Add Stage and then you
+will select '$group' from the dropdown.  It will provide a template for this operator.
+The text you should enter is below:  
+
+```
+{
+  _id: "$city",  
+  yearOfDeath : {$push: {$year:"$dateDeceased"}},  
+  count: { $sum: 1}
+}
+```  
+We are grouping by city.  Then, we are adding a field 'yearOfDeath'.  For this field,
+we are "pushing" the year field from 'dateDeceased' into an Array.  Finally, we are
+counting each element. Add an additional stage to sort by count decreasing.
+
+The result should look similar to below:  
+
+![](images/lungcancerresults.jpg)  
+
+In our sample set of data, we can see that Knoxville had 3 total deaths suspected from
+lung cancer in years 2014, 2004, and 1993.  
+
+The completed aggregation pipeline (as text) is below:  
+```
+[
+{$match: 
+{
+  isDeceased:true,
+  "conditions.conditionText":"Suspected lung cancer (situation)"}}, 
+  {$group: { _id: "$city", 
+            yearOfDeath : {$push: {$year:"$dateDeceased"}},
+            count: {$sum:1} }}, 
+  {$sort: { "count": -1}
+ }
+]
+```
+
+Be sure to have named your Pipeline and saved it.  Again, click the '...' and select
+to create a New Pipeline.  For our next aggregation, let's determine how many
+deaths occurred per month for married men in our population.  First, we need to filter
+for deceased males that were married.  In the first stage, select $match and the following:  
+
+```
+{
+  isDeceased:true,
+  maritalStatus:"M",
+  gender:"Male"
+}
+```  
+
+Add a Stage and select $group.  Enter the following:  
+```
+{
+  _id: {$month:"$dateDeceased"},
+  count : {$sum:1}
+}
+```
+
+In the above, we will group by the month using the $month operator on the ISODate
+dateDeceased.  Then, we will count each entry for each month.  
+
+Next, add a stage and select $sort.  We will sort from highest to lowest.  
+
+```
+{
+  "count": -1
+}
+```
+
+If we wanted to 'limit' the result to either 1 or 2 results only, how would we do that?  
+
+The final result is here:  
+
+![](images/marrieddeathsbymonth.jpg)  
+
+
+For our final aggregation, we will find the most common condition reported among
+all residents (alive and deceased) in Chattanooga.  Below is the final aggregation as 
+text but see if you can complete it on your own.  Before looking at the completed
+aggregation, you will need to use $match, $unwind (i.e. unwind the condition array),
+$group and perhaps $sort.  
+
+Here is an image of the result and below that, the aggregation code:  
+
+![](images/commonobs.jpg)  
+
+```
+[
+    {
+        $match: { city: "Chattanooga" }}, 
+        {$unwind: { path: "$conditions"}}, 
+        {$group: {  _id: "$conditions.conditionText",
+                    count: { $sum : 1 } }}, 
+        {$sort: { "count": -1}
+    }
+]
+```  
+
+#### Lab 8 - Code Examples
+The next lab will focus on how to utilize the MongoDB Query Language while using
+both the Node.js and Python drivers.  These are meant to strictly be high-level
+examples of how to interface with MongoDB using two popular scripting/programming
+languages.  
+
+First, let's take a look at an example in Node.js.  In th
+
 
 
 ##### 
 
 # Work In Progress...
+Code Examples in Node.js and Python
+Create Stitch application
+Expose REST endpoint
+Function/Trigger
+Simple webpage w/ query anywhere/Stitch hosting
+Charts/Embed charts
 
 
 
