@@ -704,7 +704,7 @@ using an on-premise or local version of MongoDB Enterprise Advanced.
 
 #### Lab 9 - Create a MongoDB Stitch Application  
 
-#### Lab 10 - Expose our data via RESTful endpoint  
+#### Lab 10 - Expose data via REST-ful endpoint  
 
 #### Lab 11 - Create a Stitch Trigger  
 
