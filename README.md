@@ -518,20 +518,206 @@ MongoClient.connect(dbUrl, {useNewUrlParser: true}, function (err, client) {
 });
 ```  
 
+Once you run the Node.js example again, your output should be similar to that below:  
+
+```
+$ node myNodeApp.js 
+Connected successfully to MongoDB!
+[ { _id: 'Viral sinusitis (disorder)', count: 54 },
+  { _id: 'Acute viral pharyngitis (disorder)', count: 21 },
+  { _id: 'Body mass index 30+ - obesity (finding)', count: 20 },
+  { _id: 'Prediabetes', count: 18 },
+  { _id: 'Anemia (disorder)', count: 16 },
+  { _id: 'Acute bronchitis (disorder)', count: 16 },
+  { _id: 'Chronic sinusitis (disorder)', count: 16 },
+  { _id: 'Hypertension', count: 16 },
+  { _id: 'Normal pregnancy', count: 15 },
+  ......rest removed
+
+```
+
 #### Python Example
+This example is written in Python3 and will follow the same format as the Node.js example
+above.  First, be sure to have the Python MongoDB Driver installed, pymongo.  The most recent
+version of the driver at this time is 3.7.2.  It is recommended to use pip to install pymongo on all platforms:  
+
+```
+python -m pip install pymongo
+```  
+
+##### Important Note  
+Be sure to have dnspython installed as well to ensure the most recent url syntax can
+be used.  The following will install dnspython:  
+
+```
+pip install dnspython
+```
+
+Next, make sure you have access to th Python example in the GitHub repo of this project.
+The src is in src/python and is named my_python_app.py.  
+
+If you are using MongoDB Atlas,
+you will need to copy the connection URL from the Atlas Interface.
+First, click the 'Connect' button within your cluster.  Then, click the "Connect to Application"
+button on the window that pops up.  Then, select your driver (Python) and the version (3.6 or later) and copy the
+connection string as indicated below:  
+
+![](images/pythonUrl.jpg)  
+
+Open the my_python_app.py src file and paste the url into the variable named MONGODB_URL
+that is towards the bottom of the src file.  It should look similar to that below once
+it has been pasted:  
+
+```
+####
+# Constants
+####
+MONGODB_URL = 'mongodb+srv://fhir:workshop@fhir-workshop-vautv.mongodb.net/test?retryWrites=true'
+DATABASE = 'fhirDb'
+COLLECTION = 'patients'
+```  
+
+Once you have edited the Python src for the MONGODB_URL, you can either run the Python
+script as is to filter on a single patientId or you can return all patients.  The
+following variables can be easily commented/uncommented:  
+
+```
+# Define the query
+# Comment/uncomment one of the following query variables to either filter on one patient or return all patients
+# query = {'patientId': 'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3'}
+query = {}
+projection = {'_id': 0, 'patientId': 1, 'firstName': 1, 'lastName': 1, 'birthDate': 1}
+```  
+
+As indicated in the src above, filter on a patientId which exists within your dataset or
+simply keep the empty filter to return all patients.  Take note that we are using projection
+to limit the number of fields returned.  0 indicates we will NOT return the field and 1 indicates
+the field will be returned.  Let's run the src where a single patient is returned.  Your
+result should be similar to that below:  
+
+```
+$ python3 my_python_app.py 
+============================
+  Starting my_python_app    
+============================
+
+{'patientId': 'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3', 'firstName': 'Efren426', 'lastName': 'Casper496', 'birthDate': datetime.datetime(1938, 8, 1, 4, 0)}
+
+============================
+  Ending my_python_app      
+============================
+
+```
+
+For fun, we will now edit our Python script to run one of our aggregation pipelines that we
+created in Lab 7.  Find one within MongoDB Compass that we created and open it.
+Click the '...' and select 'Export to Language'.  When the pop-up window opens, be sure to select
+'Python' and then copy the block to the right as indicated below:  
+
+![](images/pythonaggregation.jpg)  
+
+Find the method definition called 'aggregation'.  There will be a variable named
+pipeline.  You will paste your copied aggregation pipeline code from MongoDB Compass
+into this variable.  In the example below, we are using the pipeline for determining
+lung cancer deaths by City.  
+
+Your final variable should look similar to the code below:  
+
+```
+pipeline = [
+        {
+            '$match': {
+                'isDeceased': True,
+                'conditions.conditionText': 'Suspected lung cancer (situation)'
+            }
+        },
+        {
+            '$group':
+                {
+                    '_id': '$city',
+                    'yearOfDeath':
+                        {
+                            '$push':
+                                {
+                                    '$year': '$dateDeceased'
+                                }
+                        },
+                    'count':
+                        {
+                            '$sum': 1
+                        }
+                    }
+        },
+        {
+            '$sort':
+                {
+                    'count': -1
+                }
+        }]
+```  
+
+Once your variable is correctly formatted, be sure to go into the main definition towards
+the bottom of the src file and uncomment the call to the 'aggregation' method.  It should
+look similar to the Python src below:  
+
+```
+####
+# Main
+####
+if __name__ == '__main__':
+    main()
+    # Uncomment below to run aggregation
+    aggregation()
+    
+```  
+
+When you run the Python script again, you should see output similar to that below:  
+
+```
+$ python3 my_python_app.py 
+============================
+  Starting my_python_app    
+============================
 
 
+{'patientId': 'b476d9e4-b3cf-417a-8fb4-3c2bccf08bf3', 'firstName': 'Efren426', 'lastName': 'Casper496', 'birthDate': datetime.datetime(1938, 8, 1, 4, 0)}
 
 
+== Executing Aggregation Pipeline ==
 
-##### 
 
-# Work In Progress...
-Lab 9 - Create Stitch application  
-Lab 10 - Expose REST endpoint/Function  
-Lab 11 - Trigger  
-Lab 12 - Simple webpage w/ query anywhere/Stitch hosting  
-Lab 13 - Charts/Embed charts  
+{'_id': 'Knoxville', 'yearOfDeath': [2014, 2004, 1993], 'count': 3}
+{'_id': 'Cleveland', 'yearOfDeath': [1996, 2001], 'count': 2}
+{'_id': 'Chattanooga', 'yearOfDeath': [1979], 'count': 1}
+{'_id': 'Brentwood', 'yearOfDeath': [1999], 'count': 1}
+
+
+============================
+  Ending my_python_app      
+============================
+
+```
+
+#### MongoDB Atlas Labs  
+The remaining labs in this workshop **do** require MongoDB Atlas and cannot be completed
+using an on-premise or local version of MongoDB Enterprise Advanced.  
+
+#### Lab 9 - Create a MongoDB Stitch Application  
+
+#### Lab 10 - Expose our data via RESTful endpoint  
+
+#### Lab 11 - Create a Stitch Trigger  
+
+#### Lab 12 - Query Anywhere with Stitch and Stitch Hosting  
+
+#### Lab 13 - MongoDB Charts / Embedded Charts  
+
+---  
+
+**Congratulations!** You have completed the MongoDB 101 Healthcare Workshop!  
+
+---  
+
 
 
 
