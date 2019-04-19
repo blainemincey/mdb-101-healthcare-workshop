@@ -698,15 +698,216 @@ $ python3 my_python_app.py
 
 ```
 
-#### MongoDB Atlas Labs  
+#### MongoDB Atlas/MongoDB Stitch Labs  
 The remaining labs in this workshop **do** require MongoDB Atlas and cannot be completed
-using an on-premise or local version of MongoDB Enterprise Advanced.  
+using an on-premise or local version of MongoDB Enterprise Advanced.  If you have not already
+created a MongoDB Atlas cluster, please refer back to Lab 1 at the beginning of this 
+document to walk through the steps of setting it up. 
 
 #### Lab 9 - Create a MongoDB Stitch Application  
+MongoDB Stitch is a serverless platform that enables developers to quickly build 
+applications without having to set up server infrastructure. Stitch is built on top 
+of MongoDB Atlas, automatically integrating the connection to your database. 
+You can connect to Stitch through the Stitch Client SDKs, which are available 
+for many of the platforms that you develop for including JavaScript, iOS, 
+and Android.  
+
+After logging into MongoDB Atlas and selecting your project context, click the 'Stitch' link
+in the left-hand navigation and then click the 'Create New Application' button in 
+the center of the page as indicated in the image below:  
+
+![](images/createStitch.jpg)  
+
+Now, fill in the values on the pop-up window.  Enter an application name.  For example,
+'MyFhirApp' and keep the remaining defaults.  Your page should look similar to that
+below:  
+
+![](images/createnewstitch.jpg)  
+
+Once your Stitch application becomes enabled, the screen will indicate it is 
+redirecting to your Stitch application.  Your page should look similar to that below:  
+
+![](images/welcometostitch.jpg)  
+
 
 #### Lab 10 - Expose data via REST-ful endpoint  
+Now that we have created our Stitch application, let's expose our data through a
+REST based endpoint using what is known as a Webhook.
+
+First, click the Services menu in the left-hand navigation and then Add a Service.
+Click on HTTP to create an HTTP service.  Provide a Service Name.  In this example,
+we name our service 'getPatientByPatiendId'.  Click 'Add Service'.
+
+![](images/createservice.jpg)  
+
+After you add the service, you will then be directed to 'Add an Incoming Webhook'.  Click
+that button and configure your settings to what is indicated below:  
+
+![](images/createWebhook.jpg)  
+
+To keep things simple for this introduction we’re running the webhook as the System user
+and we’re skipping validation. Click Save, which will take us to the function editor
+for the service.  
+
+In the service function, we will capture the query argument and interface directly
+with our data.  Use the following code below to paste into the Function Editor:  
+
+```
+// This function is the webhook's request handler.
+exports = function(payload) {
+  
+  // We can indicate a message in our log.
+  console.log("getPatientByPatientId webhook called.");
+
+  // Grab the query param.  If does not exist, empty string
+  var patientIdArg = payload.query.arg || '';
+  
+  // Reference our MongoDB Atlas database/collection
+  var patientsCollection = context.services
+    .get("mongodb-atlas")
+    .db("fhirDb")
+    .collection("patients");
+  
+  // Query for our patientId using the patientId arg.
+  var patientDoc = patientsCollection.findOne({patientId: patientIdArg});
+  
+  return patientDoc;
+};
+```  
+
+In the Console view below the editor, use the following code to actually test our
+function we just created (Be sure the patientId exists in your dataset):  
+```
+exports({query: {arg: '705cc6d2-71a0-4f87-a976-8da866917ddd'}})
+```  
+
+![](images/testWebhook.jpg)  
+
+Your editor/console should resemble that directly above.  Once your have made your
+edits, click the 'Run' button and you should receive a result.  It will be a 
+fairly large result as we did not edit any projections to limit the fields that are
+returned.  
+
+Now that we have created our Webhook and tested our function, how can we test it
+using external tools like cURL or Postman?  
+
+First, we will switch back to the 'Settings' for our Webhook and copy the Webhook
+URL as indicated below:  
+
+![](images/copywebhookurl.jpg)  
+
+Also, notice that directly where we have our Webhook URL, there is an example of 
+using the cURL command.  If you have cURL installed, simply copy this URL and run
+your test being sure to pass your query argument.  Here is a complete example:  
+
+```
+curl https://webhooks.mongodb-stitch.com/api/client/v2.0/app/myfhirapp-xmbxe/service/getPatientByPatientId/incoming_webhook/getPatientWebhook?arg=705cc6d2-71a0-4f87-a976-8da866917ddd
+```  
+
+Again, if curl is installed, you should be able to run the command above (being sure to use
+a patientId that exists in your dataset).  
+
+If you have Postman available, see if you can invoke this endpoint using that tool.  
+
 
 #### Lab 11 - Create a Stitch Trigger  
+Stitch Triggers provide an easy way enable event processing in your applications. 
+For example, for our patients collection, if a patient's record is updated to
+indicate they are deceased, we could send a text via Twilio to someone that needs to
+be immediately notified or we could send an email using AWS Simple Email Service (SES).  The
+integration points are truly limitless.
+
+For our example, if a person's isDeceased field is updated/replaced from false to true,
+let's follow our field convention and create a dateDeceased field with today's date. 
+
+To create our trigger, click the 'Triggers' link in the left-hand navigation.  There
+are 3 types of triggers: Database, Authentication, and Scheduled.  We will be using the 
+Database Triggers for this lab.  After clicking Triggers, you will have a screen similar
+to that below.  Click 'Add a Database Trigger'.   
+
+![](images/createdbtrigger.jpg)  
+
+Be sure that Database Triggers is selected.  Name the Trigger.  In this example, we name
+our trigger isDeceasedTrigger.  Keep the Enabled and Event Ordering enabled.  Select the
+cluster, the database (fhirDb), and the collection (patients).  Now, click the Update
+checkbox **and** the Replace checkbox, enable Full Document, and select 'New Function'.  Your page should look like
+that below (other than the Replace option not checked):  
+
+![](images/createdeceasedtrigger.jpg)  
+
+After selecting 'New Function' towards the bottom, the Function Editor will open.  Name
+the function 'myDeceasedFunction' and then click Save.  We will edit the function in the
+next step.  Again, your screen should be similar to that below:  
+
+![](images/mydeceasedfunction.jpg)  
+
+Now, select 'Functions' from the side navigation and click on our newly created function
+called myDeceasedFunction similar to that below:  
+
+![](images/selectfunction.jpg)  
+
+Paste the code below over what is in the function for our Database Trigger Function:  
+
+```
+exports = function(changeEvent) {
+  
+  console.log("Calling myDeceasedFunction from my database trigger.");
+  
+  if(changeEvent.operationType == 'update') {
+    console.log("Update changeEvent.");
+  }
+  
+  // When updating from MongoDB Compass, a 'replace' changeEvent occurs.
+  if(changeEvent.operationType == 'replace') {
+    console.log("Replace changeEvent.");
+    
+    var fullDocument = changeEvent.fullDocument;
+    
+    if(fullDocument.isDeceased === true) {
+      var patientId = fullDocument.patientId;
+      var dateDeceased = new Date();
+      
+      console.log(`Record updated to isDeceased for patientId: ${patientId}`);
+      console.log(`Update dateDeceased to: ${dateDeceased}`);
+      
+      var query = {"patientId":patientId};
+      var update = {$set : {"dateDeceased":dateDeceased}};
+      var options = {multi:false};
+      
+      // Access the MongoDB Atlas service
+      var patientsCollection = context.services
+        .get("mongodb-atlas")
+        .db("fhirDb")
+        .collection("patients");
+        
+      patientsCollection.updateOne(query,update,options)
+        .then(result => {
+          const {matchedCount, modifiedCount} = result;
+          if(matchedCount && modifiedCount) {
+            console.log(`Successful update of patientId: ${patientId}`);
+          }
+        });
+    }
+  }
+};
+
+```
+
+Once you have pasted the code into the function editor, be sure to click save.
+
+Now, go over the MongoDB Compass and select a record where isDeceased is false.  Update
+the field to true and click the Update button within MongoDB Compass.  Next, go into
+your MongoDB Stitch console and click the Logs button on the left-hand navigation.  Expand
+the entries that are indicated as being from the trigger and find the log statements.  You
+should see something similar to what is below if your update was successful:  
+
+![](images/runtrigger.jpg)  
+
+Now, make note of the patientId that was updated.  Filter for that document in MongoDB
+Compass and verify that the dateDeceased field was added and the value is today's datetime.
+It is possible that the field is at the very bottom of the document so be sure to expand
+the document to view all fields.  
+
 
 #### Lab 12 - Query Anywhere with Stitch and Stitch Hosting  
 
