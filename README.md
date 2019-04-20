@@ -910,6 +910,14 @@ the document to view all fields.
 
 
 #### Lab 12 - Query Anywhere with Stitch and Stitch Hosting  
+MongoDB Stitch provides a multitude of capabilities.  One of those is Query Anywhere.
+Query Anywhere gives you the capability to query data stored in MongoDB Atlas directly from
+your client application code with the MongoDB query language.  Data access rules defined
+on the Stitch server for each MongoDB collection let you securely filter results based on
+the logged in user or the content of each document.  
+
+Let's create a simple web page that will use Query Anywhere to interface with our data
+stored in MongoDB Atlas.
 
 #### Lab 13 - MongoDB Charts / Embedded Charts  
 
