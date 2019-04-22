@@ -1109,6 +1109,75 @@ You should now be able to interact with your webpage via Stitch Hosting!
 
 #### Lab 14 - MongoDB Charts / Embedded Charts  
 
+For the final lab in our workshop, we will look into one of the newest products added
+to the MongoDB product line, MongoDB Charts.  MongoDB Charts, now available in beta,
+is the fastest and easiest way to create visualizations of MongoDB data. 
+Connect to any MongoDB instance as a data source, create charts and graphs, 
+build dashboards, and share them with other users for collaboration.  
+
+To get started with MongoDB Charts, get out of the Stitch Application console and
+get back into your cluster view for your project.  At the top of the Stitch Application
+console on the top left-hand corner, there is an navigation element to click to get back
+to the MongoDB Atlas Console similar to that below:  
+
+![](images/getbacktostitch.jpg)  
+
+Then, click on the lower left-hand navigation to enter Charts and finally, click
+the green button to 'Enable Charts' as indicated in the image below:  
+
+![](images/charts1.jpg)  
+
+Once Charts has been enabled, you will be presented with the image below that indicates
+you will need to add a datasource:  
+
+![](images/charts2.jpg)  
+
+Now, click the 'Data Sources' tab at the top and connect to your datasource/collection
+that is within MongoDB Atlas.  It should look like the image below:  
+
+![](images/connectcharts.jpg)  
+
+Several things will occur behind the scenes once you have clicked the 'Connect' button.
+In about 1 minute, you will have a dialog similar to below to select and set the permisssions
+on your collection:  
+
+![](images/selectcollectioncharts.jpg)  
+
+Then, keep the default settings (i.e. reader) before clicking the 'Publish Data Source'.  
+
+![](images/defaultscharts.jpg)  
+
+Now, create a new dashboard.
+
+![](images/newdashboard.jpg)
+
+Now, create a new chart and select your previously created data source as indicated below:  
+
+![](images/newchart.jpg)  
+
+We can now begin building dashboards with our data!
+
+For a simple example, select Stacked Chart Type.  On the X-axis, drag the city field.  Limit the results
+to 20.  Then, drag the gender field to the Y-axis.  For the series, drag the gender field
+again.  This chart displays the distribution of males and females within our sample data
+set.  We can then give this chart a title and choose to save and close it.
+
+![](images/thefirstchart.jpg)  
+
+Once we save the chart, it will then display on our central dashboard similar to that
+below:  
+
+![](images/newdashboardresult.jpg)  
+
+From here, we can adjust the refresh rate, etc.  
+
+What if you would like users to access this chart from within in existing application?  
+MongoDB Charts supports embedding the chart in existing applications!  
+
+For additional information on MongoDB Charts, please refer to the [MongoDB Charts Documentation](https://docs.mongodb.com/charts/master/).
+To embed charts in your existing application, refer to the [MongoDB Charts Embedded Docs](https://docs.mongodb.com/charts/master/embedding-charts/).
+And, you can see the example HTML src in the GitHub repo in the src/html named EmbeddedChart.html.
+ 
 ---  
 
 **Congratulations!** You have completed the MongoDB 101 Healthcare Workshop!  
