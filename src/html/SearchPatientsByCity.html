@@ -5,6 +5,7 @@
     <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.0/stitch.js"></script>
     <script>
         // Initialize the App Client
+        // Add your app id below
         const client = stitch.Stitch.initializeDefaultAppClient("myfhirapp-xmbxe");
 
         // Get a MongoDB Service Client
@@ -51,6 +52,7 @@
         };
 
         // Call function on load
+        // Be sure to have anonymous auth enabled within Stitch!
         function displayPatientsOnLoad() {
             client.auth
                 .loginWithCredential(new stitch.AnonymousCredential())

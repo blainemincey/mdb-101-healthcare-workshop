@@ -909,7 +909,7 @@ It is possible that the field is at the very bottom of the document so be sure t
 the document to view all fields.  
 
 
-#### Lab 12 - Query Anywhere with Stitch and Stitch Hosting  
+#### Lab 12 - Query Anywhere with Stitch 
 MongoDB Stitch provides a multitude of capabilities.  One of those is Query Anywhere.
 Query Anywhere gives you the capability to query data stored in MongoDB Atlas directly from
 your client application code with the MongoDB query language.  Data access rules defined
@@ -917,9 +917,197 @@ on the Stitch server for each MongoDB collection let you securely filter results
 the logged in user or the content of each document.  
 
 Let's create a simple web page that will use Query Anywhere to interface with our data
-stored in MongoDB Atlas.
+stored in MongoDB Atlas.  There is a sample web page that is in the src/html directory of
+this GitHub repository named SearchPatientsByCity.html.  Or, you can simply copy/paste the src code below into an empty
+text file that you save as HTML.  Then, you can open the file directly into your browser
+of choice.
 
-#### Lab 13 - MongoDB Charts / Embedded Charts  
+```
+<html>
+<head>
+    <!-- Bootstrap for look and feel -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+    <script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.0.0/stitch.js"></script>
+    <script>
+        // Initialize the App Client
+        // Add your app id below
+        const client = stitch.Stitch.initializeDefaultAppClient("<YOUR APP ID>");
+
+        // Get a MongoDB Service Client
+        const mongodb = client.getServiceClient(
+            stitch.RemoteMongoClient.factory,
+            "mongodb-atlas"
+        );
+
+        // Get a reference to the fhirDb database
+        const db = mongodb.db("fhirDb");
+
+        // Search by city
+        function searchByCity() {
+
+            let city = document.getElementById("city").value;
+            console.log("Search By City: " + city);
+
+            client.callFunction("searchByCity", [city])
+                .then(docs => {
+
+                    const patientsTableBody = document.getElementById("patientsTableBody");
+                    const numResults = document.getElementById("numResults");
+
+
+                    const tableRows = docs.map(patient =>
+                        `<tr>
+                         <td>${patient.firstName}</td>
+                         <td>${patient.lastName}</td>
+                         <td>${patient.gender}</td>
+                         <td>${patient.maritalStatus}</td>
+                         <td>${patient.birthDate}</td>
+                         <td>${patient.city}</td>
+                         <td>${patient.state}</td>
+                         </tr>
+
+                        `
+                    );
+                    patientsTableBody.innerHTML = tableRows.join("");
+                    numResults.innerHTML = docs.length;
+
+
+                })
+                .catch(console.error);
+        };
+
+        // Call function on load
+        // Be sure to have anonymous auth enabled within Stitch!
+        function displayPatientsOnLoad() {
+            client.auth
+                .loginWithCredential(new stitch.AnonymousCredential())
+                .then(searchByCity)
+                .catch(console.error);
+        }
+
+    </script>
+</head>
+
+<body onLoad="displayPatientsOnLoad()">
+<h2>Search Patients By City</h2>
+<p>This web application will provide an example of interfacing with MongoDB Stitch via Query Anywhere.</p>
+<div>
+City: <input id="city"><input type="submit" onClick="searchByCity()">
+</div>
+<hr>
+<div>
+<table>
+    <tr>Number of Results:  </tr>
+    <tr><span id="numResults"></span></tr>
+</table>
+</div>
+<table class="table table-striped table-bordered table-sm">
+    <thead class="thead-dark">
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Gender</th>
+            <th>Marital Status</th>
+            <th>Birth Date</th>
+            <th>City</th>
+            <th>State</th>
+        </tr>
+    </thead>
+    <tbody id="patientsTableBody"></tbody>
+</table>
+</body>
+
+</html>
+
+```  
+
+A couple of items to call out in the src.  First, you will need to App ID of your Stitch
+application and paste in the code block where you find "<YOUR APP ID>".  The location
+of this value is in the upper left-hand corner of the Stitch interface as shown below.  Also,
+be sure to enable Anonymous Authentication which is also shown below.  Both of this
+are accessible if you click the "_Getting Started" item in the left hand navigation.  
+
+![](images/stitchappid.jpg)  
+
+Again, paste the App ID into the appropriate section in the HTML src.  You will notice
+that within one of the JavaScript functions (Stitch Query Anywhere), we are calling a
+named function and passing a city argument.  Copy/paste the code below into a new function.
+You will use the same process as has been used earlier in the workshop to create the function.
+
+Hint: Left-hand navigation for Functions.  Then, click the 'Create New Function' button.
+The name of the function should be 'searchByCity'.  Then, in the Function Editor, paste the code
+below:  
+
+```
+exports = function(arg){
+    console.log("Search patients by city: " + arg);
+
+    // we can use a regular expression to perform a partial/case-insensitive Search
+    var cityArgument = BSON.BSONRegExp(arg, 'i') || '';
+
+    // Accessing a mongodb service:
+    var patientsCollection = context.services.get("mongodb-atlas").db("fhirDb").collection("patients");
+    
+    var query = {city:{"$regex" : cityArgument}};
+    var projection = {_id:0, firstName: 1, lastName: 1, gender: 1, maritalStatus: 1, birthDate: 1, city: 1, state: 1 };
+    
+    return patientsCollection.find(query, projection)
+      .limit(20)
+      .toArray()
+      .then(patients => {
+          console.log(`Successfully found ${patients.length} documents.`);
+          return patients;
+    })
+    .catch(err => console.error(`Failed to find documents: ${err}`));
+
+};
+```  
+
+If you review the function, you will notice we are doing a case-insensitive search using
+a regular expression which means we can also do a partial search as well.  We are projecting
+a subset of fields to return and only returning 20 matches.  You can also edit the HTML
+src to interact directly with Query Anywhere instead of calling a named function.  When the
+page initially loads, it will automatically load a result set since we have not put
+any 'error logic' for handling an empty string search.  How could you improve this?
+
+Now, if we enter a partial city name in our search block, for example 'mem' for Memphis, 
+you should get something similar to the following:  
+
+![](images/searchmem.jpg)  
+
+#### Lab 13 - MongoDB Stitch Hosting
+
+Wow, this is great!  But, what if I want to have this webpage where other people can use
+it?  I do not have the time to request a server to host this!  MongoDB Stitch Hosting
+to the rescue!
+
+Stitch Hosting allows you to host, manage, and serve your application’s static 
+media and document files. You can use Hosting to store individual pieces of 
+content or to upload and serve your entire client application.  
+
+To get started, click 'Hosting (Beta)' in the lower left-hand navigation of the 
+Stitch UI.  You will have a screen similar to that below:  
+
+![](images/stitchhosting.jpg)  
+
+Click the 'Enable Hosting' button in the center of the UI.  Once enabled, you will
+see something like below:  
+
+![](images/hosting-step1.jpg)  
+
+Click the 'Upload Files' button and select your HTML file you just created.  
+
+![](images/uploadfile.jpg)  
+
+After the file has been uploaded, select the checkbox next to it and then click
+the 'Actions' box and select 'Open in Browser' as indicated below:  
+
+![](images/openinbrowser.jpg)  
+
+You should now be able to interact with your webpage via Stitch Hosting!  
+
+
+#### Lab 14 - MongoDB Charts / Embedded Charts  
 
 ---  
 
